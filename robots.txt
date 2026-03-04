@@ -1,0 +1,4 @@
+# ملف robots.txt
+User-agent: *
+Allow: /
+Sitemap: https://alsharq-shoes.pages.dev/sitemap.xml
