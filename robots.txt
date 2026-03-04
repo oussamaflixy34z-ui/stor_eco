@@ -1,0 +1,4 @@
+# ملف robots.txt
+User-agent: *
+Allow: /
+Sitemap: https://stor-eco.pages.dev/sitemap.xml
