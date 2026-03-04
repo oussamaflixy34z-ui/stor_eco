@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="5W3ZaBe3FPcJvBhhmzlTifWTs7MSU-EdHKYeMQrL3SE" />
-    <title>احذية الشرق | أفضل متجر أحذية طبية ورياضية في الجزائر</title>
+    <title>احذية الشرق - أحذية طبية ممتازة مريحة وانيقة</title>
     <meta name="description"
         content="تسوق الآن من متجر احذية الشرق. نوفر لكم تشكيلة واسعة من الأحذية الطبية، الرياضية، والسنيكرز بأفضل الأسعار في الجزائر. توصيل سريع لجميع الولايات.">
     <meta name="keywords"
@@ -3953,8 +3953,9 @@
                                 const parts = c.trim().split('|');
                                 return { name: parts[0], hex: parts[1] || null };
                             }).filter(c => c.name) : [],
-                            features: p.features ? (Array.isArray(p.features) ? p.features : p.features.split(',')) : [],
-                            category: p.category || 'عام'
+                            features: p.features ? (Array.isArray(p.features) ? p.features : p.features.split(',')) : (p['الميزات'] ? String(p['الميزات']).split(',') : []),
+                            category: p.category || p['الفئة'] || 'عام',
+                            tags: p.tags ? (Array.isArray(p.tags) ? p.tags : String(p.tags).split(',')) : (p['الوسم'] ? String(p['الوسم']).split(',') : [])
                         }));
                 }
 
@@ -3993,15 +3994,45 @@
                     const defaultImage = this.escapeHtml(product.images[0]);
                     const productImagesJson = this.escapeHtml(JSON.stringify(product.images));
 
+                    // --- بناء الوسوم والمميزات والفئات ---
+                    let tagsHtml = '';
+                    if (product.tags && Array.isArray(product.tags)) {
+                        tagsHtml = product.tags.filter(t => t).map(tag => {
+                            let bgClass = 'bg-sage'; // اللون الإفتراضي
+                            if (tag.includes('تخفيض') || tag.includes('خصم')) bgClass = 'bg-red-500';
+                            else if (tag.includes('حصري') || tag.includes('جديد')) bgClass = 'bg-charcoal';
+                            else if (tag.includes('مبيعاً')) bgClass = 'bg-yellow-500';
+                            return `<span class="px-2 py-1 text-xs font-bold text-white rounded-md shadow-sm ${bgClass}">${this.escapeHtml(tag)}</span>`;
+                        }).join('');
+                    }
+
+                    let featuresHtml = '';
+                    if (product.features && Array.isArray(product.features)) {
+                        const validFeatures = product.features.filter(f => f && f.trim() !== '');
+                        if (validFeatures.length > 0) {
+                            featuresHtml = `<div class="flex flex-wrap gap-1 mt-2 mb-2">
+                                ${validFeatures.map(f => `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded border border-gray-200">${this.escapeHtml(f)}</span>`).join('')}
+                            </div>`;
+                        }
+                    }
+
+                    let categoryHtml = '';
+                    if (product.category) {
+                        categoryHtml = `<span class="text-xs text-sage font-bold uppercase tracking-wider mb-1 block">${this.escapeHtml(product.category)}</span>`;
+                    }
+
                     return `
-                    <div class="product-card bg-white p-4 rounded-3xl shadow-sm hover:shadow-md transition-shadow" data-product-id="${product.id}">
-                        <div class="product-image-container cursor-pointer overflow-hidden rounded-2xl" onclick="app.openLightbox(this.querySelector('img').src)">
+                    <div class="product-card bg-white p-4 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative" data-product-id="${product.id}">
+                        <div class="product-image-container cursor-pointer overflow-hidden rounded-2xl relative" onclick="app.openLightbox(this.querySelector('img').src)">
+                            ${tagsHtml ? `<div class="absolute top-2 right-2 flex flex-col gap-1 z-10">${tagsHtml}</div>` : ''}
                             <img src="${defaultImage}" id="prod-img-${product.id}" loading="lazy" alt="${safeName}" class="product-main-img w-full aspect-square object-cover hover:scale-105 transition-transform duration-500">
                         </div>
                         <div class="product-info mt-4 space-y-2 text-right" dir="rtl">
-                            <h3 class="text-lg font-bold text-charcoal">${safeName}</h3>
+                            ${categoryHtml}
+                            <h3 class="text-lg font-bold text-charcoal leading-tight">${safeName}</h3>
                             <p class="text-sage font-bold text-xl font-body">${this.formatPrice(product.price)}</p>
-                            ${safeDesc ? '<p class="text-sm text-gray-500">' + safeDesc + '</p>' : ''}
+                            ${featuresHtml}
+                            ${safeDesc ? '<p class="text-sm text-gray-500 line-clamp-2" title="' + safeDesc + '">' + safeDesc + '</p>' : ''}
                             
                             ${hasColors ? `
                             <div class="mt-3">
@@ -4598,8 +4629,8 @@
 
             openPolicy(type) {
                 const policies = {
-                    exchange: { title: 'سياسة الاستبدال والاسترجاع', content: '<h4>حق الاسترجاع</h4><p>يمكنكم استرجاع أو استبدال المنتج خلال 7 أيام من تاريخ الاستلام بشرط أن يكون المنتج في حالته الأصلية وبغلافه الأصلية.</p>' },
-                    shipping: { title: 'شروط الشحن والتوصيل', content: '<h4>مدة التوصيل</h4><p>يستغرق التوصيل عادة من 24 إلى 72 ساعة لجميع ولايات الجزائر.</p>' },
+                    exchange: { title: 'سياسة الاستبدال والاسترجاع', content: '<h4>حق الاسترجاع</h4><p> يمكنكم استبدال المنتج خلال 1 يوم من تاريخ الاستلام بشرط أن يكون المنتج في حالته الأصلية وبغلافه الأصلية.</p>' },
+                    shipping: { title: 'شروط الشحن والتوصيل', content: '<h4>مدة التوصيل</h4><p>يستغرق التوصيل عادة من 24 إلى 48 ساعة لجميع ولايات الجزائر.</p>' },
                     privacy: { title: 'سياسة الخصوصية', content: '<h4>حماية البيانات</h4><p>نحن نلتزم بحماية خصوصية بياناتكم الشخصية ولا نشاركها مع أي طرف ثالث.</p>' },
                     faq: { title: 'الأسئلة الشائعة', content: '<h4>كيف يمكنني الطلب؟</h4><p>ببساطة اختر المنتج، أضفه للسلة، ثم املأ معلوماتك.</p>' },
                     terms: { title: 'الشروط والأحكام', content: '<h4>اتفاقية الاستخدام</h4><p>باستخدامك لهذا الموقع، فأنت توافق على شروط الخدمة الخاصة بنا.</p>' }
