@@ -3954,7 +3954,7 @@
                                 return { name: parts[0], hex: parts[1] || null };
                             }).filter(c => c.name) : [],
                             features: p.features ? (Array.isArray(p.features) ? p.features : p.features.split(',')) : (p['الميزات'] ? String(p['الميزات']).split(',') : []),
-                            category: p.category || p['الفئة'] || 'عام',
+                            category: p.category || p['الفئة'] || ' ',
                             tags: p.tags ? (Array.isArray(p.tags) ? p.tags : String(p.tags).split(',')) : (p['الوسم'] ? String(p['الوسم']).split(',') : [])
                         }));
                 }
