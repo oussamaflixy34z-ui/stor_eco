@@ -3709,6 +3709,114 @@
                     this.freeCcpDelivery = s['توصيل_مجاني_بريدي'].trim() === 'نعم';
                     this.updatePaymentUI();
                 }
+
+                // تحديث SEO ديناميكياً
+                this.updateDynamicSEO(s);
+            }
+
+            // ===== تحديث وسوم SEO ديناميكياً =====
+            updateDynamicSEO(settings) {
+                const storeName = settings?.['عنوان_الموقع'] || 'احذية الشرق';
+                const storeDesc = settings?.['وصف_عنوان_الرئيسية'] || '';
+                const logoUrl = settings?.['رابط_الشعار'] || 'https://i.imgur.com/pWY0gWB.png';
+                const siteUrl = window.location.href;
+
+                // 1. تحديث عنوان الصفحة
+                document.title = storeName + ' | أفضل متجر أحذية في الجزائر';
+
+                // 2. بناء وصف ذكي من المنتجات
+                const productNames = this.products.slice(0, 5).map(p => p.name).join('، ');
+                const dynamicDesc = storeDesc
+                    ? storeDesc + '. تشكيلة تشمل: ' + productNames + '. توصيل سريع لجميع الولايات.'
+                    : 'تسوق الآن من ' + storeName + '. تشكيلة واسعة تشمل: ' + productNames + '. توصيل سريع لـ 58 ولاية.';
+
+                // 3. بناء كلمات مفتاحية من أسماء المنتجات
+                const productKeywords = this.products.map(p => p.name).join('، ');
+                const dynamicKeywords = storeName + '، أحذية، سنيكرز، أحذية طبية، أحذية رياضية، الجزائر، ' + productKeywords;
+
+                // 4. تحديث وسوم <meta>
+                this._updateMeta('description', dynamicDesc);
+                this._updateMeta('keywords', dynamicKeywords);
+
+                // 5. تحديث وسوم OpenGraph (فيسبوك / واتساب)
+                this._updateMetaProperty('og:title', storeName + ' | المتجر الأول للأحذية في الجزائر');
+                this._updateMetaProperty('og:description', dynamicDesc);
+                this._updateMetaProperty('og:image', logoUrl);
+                this._updateMetaProperty('og:url', siteUrl);
+
+                // 6. تحديث وسوم Twitter
+                this._updateMetaProperty('twitter:title', storeName + ' - جودة وراحة في كل خطوة');
+                this._updateMetaProperty('twitter:description', dynamicDesc);
+                this._updateMetaProperty('twitter:image', logoUrl);
+
+                // 7. تحديث البيانات المنظمة (JSON-LD)
+                this._updateJsonLd(storeName, dynamicDesc, logoUrl, siteUrl);
+
+                console.log('SEO: تم تحديث وسوم SEO ديناميكياً لـ "' + storeName + '"');
+            }
+
+            _updateMeta(name, content) {
+                let el = document.querySelector('meta[name="' + name + '"]');
+                if (el) { el.setAttribute('content', content); }
+                else {
+                    el = document.createElement('meta');
+                    el.name = name;
+                    el.content = content;
+                    document.head.appendChild(el);
+                }
+            }
+
+            _updateMetaProperty(property, content) {
+                let el = document.querySelector('meta[property="' + property + '"]');
+                if (el) { el.setAttribute('content', content); }
+                else {
+                    el = document.createElement('meta');
+                    el.setAttribute('property', property);
+                    el.content = content;
+                    document.head.appendChild(el);
+                }
+            }
+
+            _updateJsonLd(name, description, image, url) {
+                // حذف السكيما القديمة إن وجدت
+                const oldScript = document.querySelector('script[type="application/ld+json"]');
+                if (oldScript) oldScript.remove();
+
+                const schema = {
+                    "@context": "https://schema.org",
+                    "@type": "Store",
+                    "name": name,
+                    "description": description,
+                    "image": image,
+                    "@id": url,
+                    "url": url,
+                    "address": {
+                        "@type": "PostalAddress",
+                        "addressLocality": "الجزائر",
+                        "addressCountry": "DZ"
+                    },
+                    "priceRange": "$$",
+                    "hasOfferCatalog": {
+                        "@type": "OfferCatalog",
+                        "name": "منتجات " + name,
+                        "itemListElement": this.products.slice(0, 10).map(p => ({
+                            "@type": "Product",
+                            "name": p.name,
+                            "image": p.images?.[0] || '',
+                            "offers": {
+                                "@type": "Offer",
+                                "price": p.price,
+                                "priceCurrency": "DZD",
+                                "availability": "https://schema.org/InStock"
+                            }
+                        }))
+                    }
+                };
+
+                const script = document.createElement('script');
+                script.type = 'application/ld+json';
+                script.textContent = JSON.stringify(schema);
+                document.head.appendChild(script);
             }
 
             // Removed duplicate updateFaviconFromLogo
