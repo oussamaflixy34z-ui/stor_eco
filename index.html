@@ -62,7 +62,7 @@
 
         /* ===== Responsive Breakpoints ===== */
         .hidden {
-            display: none !important;
+            display: none;
         }
 
         .md\:block {
@@ -117,6 +117,27 @@
 
         .nav-link:hover::after {
             width: 100%;
+        }
+
+        .navbar-logo-img {
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-shadow {
+            /* Black/Dark for on-page visibility */
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15)) brightness(0);
+        }
+
+        .h-14 {
+            height: 3.5rem;
+        }
+
+        .h-20 {
+            height: 5rem;
         }
 
         .cart-counter {
@@ -1453,6 +1474,10 @@
             flex-wrap: wrap;
         }
 
+        .flex-col {
+            flex-direction: column;
+        }
+
         .items-center {
             align-items: center;
         }
@@ -1483,6 +1508,10 @@
 
         .gap-4 {
             gap: 1rem;
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
         }
 
         .grid-cols-1 {
@@ -1619,6 +1648,10 @@
 
         .mb-3 {
             margin-bottom: 0.75rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem;
         }
 
         .mb-8 {
@@ -3133,7 +3166,9 @@
     <nav class="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.imgur.com/pWY0gWB.png" alt="Logo"
+                        class="navbar-logo-img h-14 w-auto object-contain logo-shadow">
                     <h1 class="text-2xl font-display font-medium text-charcoal">احذية الشرق</h1>
                 </div>
                 <div class="hidden md:block">
@@ -3173,8 +3208,14 @@
             </div>
             <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="app.closeMobileMenu()"></div>
             <div class="md:hidden mobile-menu" id="mobileMenu">
-                <button onclick="app.closeMobileMenu()" class="absolute top-4 left-4 text-3xl">&times;</button>
-                <div class="mobile-menu-inner">
+                <button onclick="app.closeMobileMenu()" class="absolute top-4 left-4 text-3xl"
+                    style="z-index: 10;">&times;</button>
+                <div class="mobile-menu-header flex flex-col items-center gap-2 mb-6 pt-4 text-center">
+                    <img src="https://i.imgur.com/pWY0gWB.png" alt="Logo"
+                        class="mobile-menu-logo-img h-20 w-auto object-contain logo-shadow">
+                    <span class="text-xl font-display font-medium text-charcoal">احذية الشرق</span>
+                </div>
+                <div class="mobile-menu-inner" style="margin-top: 0;">
                     <a href="#home">الرئيسية</a>
                     <a href="#products">المنتجات</a>
                     <a href="#story">قصتنا</a>
@@ -3426,7 +3467,7 @@
                 <div class="rich-footer-col">
                     <h3 class="rich-footer-heading">من نحن</h3>
                     <div class="rich-footer-logo-box">
-                        <img src="https://i.imgur.com/pWY0gWB.png" alt="الشرق" class="rich-footer-logo-img">
+                        <img src="https://i.imgur.com/pWY0gWB.png" alt="الشرق" class="rich-footer-logo-img logo-shadow">
                     </div>
                     <p class="rich-footer-desc">متجركم المفضل للأحذية الطبية الفاخرة المريحة والأنيقة التي تلبي كافة
                         احتياجاتكم اليومية.</p>
@@ -3568,6 +3609,7 @@
             }
 
             async init() {
+                console.log("App Init: Starting Zero Latency Render...");
                 this.loadFromLocalStorage();
                 this.initializeProducts();
                 this.renderProducts();
@@ -3576,19 +3618,55 @@
                 this.setupEventListeners();
                 this.updateFormSummary();
 
+                // Optimized: Async tinting after first paint to avoid blocking
+                setTimeout(() => this.updateThemeBranding(), 100);
+
+                console.log("App Init: Fetching remote data...");
                 await this.loadSheetData();
                 this.initializeProducts();
                 this.renderProducts();
-                this.updateFaviconFromLogo();
+                this.updateThemeBranding();
+                console.log("App Init: Final Render Complete.");
             }
 
-            updateFaviconFromLogo() {
+            updateThemeBranding() {
                 try {
                     const logo = document.querySelector('.rich-footer-logo-img');
-                    const fav = document.getElementById('dynamic-favicon');
-                    if (logo && fav && logo.src) {
-                        fav.href = logo.src;
-                    }
+                    const favicon = document.getElementById('dynamic-favicon');
+                    if (!logo || !favicon) return;
+
+                    const logoSrc = logo.src;
+                    if (this._lastFaviconLogo === logoSrc) return; // Skip if already done
+                    this._lastFaviconLogo = logoSrc;
+
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const size = 64;
+                            canvas.width = size;
+                            canvas.height = size;
+                            const ctx = canvas.getContext('2d');
+
+                            // High Contrast Palette: Neon Green with a white glow
+                            const neonGreen = '#00FFA3';
+
+                            // Draw the logo with a white shadow/glow for dark mode compatibility
+                            ctx.shadowColor = "rgba(255,255,255,0.8)";
+                            ctx.shadowBlur = 5;
+                            ctx.drawImage(img, 4, 4, size - 8, size - 8);
+
+                            ctx.globalCompositeOperation = 'source-in';
+                            ctx.shadowBlur = 0; // Disable shadow for the solid tint
+                            ctx.fillStyle = neonGreen;
+                            ctx.fillRect(0, 0, size, size);
+
+                            favicon.href = canvas.toDataURL('image/png');
+                        } catch (e) { favicon.href = logoSrc; }
+                    };
+                    img.onerror = () => { favicon.href = logoSrc; };
+                    img.src = logoSrc;
                 } catch (e) { }
             }
 
@@ -3614,11 +3692,26 @@
                 if (s['عنوان_القصة']) { const el = document.querySelector('.story-title'); if (el) el.textContent = s['عنوان_القصة']; }
                 if (s['وصف_القصة']) { const el = document.querySelector('.story-text'); if (el) el.textContent = s['وصف_القصة']; }
 
+                // Dynamic Logo & Favicon Sync
+                if (s['رابط_الشعار']) {
+                    const logoEl = document.querySelector('.rich-footer-logo-img');
+                    const navLogoEl = document.querySelector('.navbar-logo-img');
+                    const mobileMenuLogoEl = document.querySelector('.mobile-menu-logo-img');
+
+                    if (logoEl) logoEl.src = s['رابط_الشعار'];
+                    if (navLogoEl) navLogoEl.src = s['رابط_الشعار'];
+                    if (mobileMenuLogoEl) mobileMenuLogoEl.src = s['رابط_الشعار'];
+
+                    this.updateThemeBranding();
+                }
+
                 if (s['توصيل_مجاني_بريدي']) {
                     this.freeCcpDelivery = s['توصيل_مجاني_بريدي'].trim() === 'نعم';
                     this.updatePaymentUI();
                 }
             }
+
+            // Removed duplicate updateFaviconFromLogo
 
             async loadSheetData() {
                 // Check if Early Fetch (Head) result is already waiting
@@ -3669,9 +3762,10 @@
                 } catch (error) {
                     console.log('fetch error:', error.message);
                     window.SHEET_DATA.loadError = true;
-                    if (noProductsEl) {
-                        noProductsEl.textContent = 'لم نستطع تحميل القائمة. عرض نسخة محفوظة أو المحاولة لاحقاً.';
-                        noProductsEl.style.display = 'block';
+                    const noProd = document.getElementById('noProducts');
+                    if (noProd) {
+                        noProd.textContent = 'لم نستطع تحميل القائمة. عرض نسخة محفوظة أو المحاولة لاحقاً.';
+                        noProd.style.display = 'block';
                     }
                 }
             }
@@ -3687,7 +3781,7 @@
                 if (officeEl) officeEl.textContent = 'المكتب ' + this.deliveryPrices.office + ' دج';
                 if (homeEl) homeEl.textContent = 'المنزل ' + this.deliveryPrices.home + ' دج';
 
-                if (window.SHEET_DATA.loaded && window.SHEET_DATA.products?.length > 0) {
+                if (window.SHEET_DATA.loaded && window.SHEET_DATA.products && window.SHEET_DATA.products.length > 0) {
                     this.products = window.SHEET_DATA.products
                         .filter(p => p.name && p.name.trim() !== '' && p.price && parseInt(p.price) > 0)
                         .map((p, index) => ({
@@ -3705,11 +3799,15 @@
                             features: p.features ? (Array.isArray(p.features) ? p.features : p.features.split(',')) : [],
                             category: p.category || 'عام'
                         }));
-                } else {
+                }
+
+                // Fallback: Ensure products is NEVER empty to prevent blank screen
+                if (!this.products || this.products.length === 0) {
                     this.products = this.getDefaultProducts();
                 }
+
                 const noProducts = document.getElementById('noProducts');
-                if (noProducts) noProducts.style.display = (window.SHEET_DATA.loadError || (window.SHEET_DATA.loaded && this.products.length === 0)) ? 'block' : 'none';
+                if (noProducts) noProducts.style.display = (window.SHEET_DATA.loadError && this.products.length === 0) ? 'block' : 'none';
             }
 
             getDefaultProducts() {
@@ -4294,7 +4392,7 @@
 
                 const m = document.getElementById('successModal');
                 if (m) {
-                    m.classList.remove('is-review'); // Ensure details are hidden unless submitOrder adds it
+                    m.classList.remove('is-review');
                     m.classList.add('active');
                 }
             }
@@ -4302,72 +4400,6 @@
             closeSuccessModal() {
                 const el = document.getElementById('successModal');
                 if (el) el.classList.remove('active');
-            }
-
-            finalConfirmOrder() {
-                this.closeSuccessModal();
-                // This function is now legacy, confirmAndSendOrder handles the real work
-            }
-
-            async confirmAndSendOrder() {
-                if (!this.pendingOrder) return;
-
-                const confirmBtn = document.getElementById('confirmOrderBtn');
-                if (confirmBtn) {
-                    confirmBtn.disabled = true;
-                    confirmBtn.textContent = 'جاري الإرسال...';
-                }
-
-                if (window.GOOGLE_SCRIPT_URL) {
-                    try {
-                        const response = await fetch(window.GOOGLE_SCRIPT_URL, {
-                            method: 'POST',
-                            cache: 'no-cache',
-                            headers: { 'Content-Type': 'text/plain' },
-                            body: JSON.stringify(this.pendingOrder)
-                        });
-                        const data = await response.json().catch(() => ({}));
-
-                        if (!response.ok || !data || data.success === false) {
-                            if (confirmBtn) {
-                                confirmBtn.disabled = false;
-                                confirmBtn.textContent = 'تأكيد وإرسال الطلب';
-                            }
-                            return alert('حدث خطأ في الإرسال. جرّب مرة أخرى.');
-                        }
-                    } catch (err) {
-                        console.error('Error submitting order:', err);
-                        if (confirmBtn) {
-                            confirmBtn.disabled = false;
-                            confirmBtn.textContent = 'تأكيد وإرسال الطلب';
-                        }
-                        return alert('حدث خطأ في الاتصال. يرجى المحاولة لاحقاً.');
-                    }
-                }
-
-                // If success (or local test)
-                this.cart = [];
-                this.buyNowItem = null;
-                window.baridiExternalId = '';
-                this.saveCart();
-                this.updateCartCounter();
-                this.renderCartDropdown();
-                this.updateFormSummary();
-                const form = document.getElementById('orderForm');
-                if (form) form.reset();
-
-                // Security: Update last order time
-                window.lastOrderTime = Date.now();
-
-                // Show Success final state
-                document.getElementById('successModalTitle').textContent = 'تم إرسال الطلب بنجاح!';
-                document.getElementById('successIcon').textContent = '✓';
-                document.getElementById('modalActions').innerHTML = `
-                    <button class="success-btn" style="grid-column: 1 / -1" onclick="app.closeSuccessModal()">إغلاق</button>
-                `;
-
-                // Scroll to top to see notification or hero
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
             openBaridiPopup() {
